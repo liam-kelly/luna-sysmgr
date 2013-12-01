@@ -50,6 +50,7 @@
 #include "BootManager.h"
 
 #include "ApplicationProcessManager.h"
+#include "ApplicationLaunchBooster.h"
 
 #include <ProcessKiller.h>
 
@@ -784,6 +785,8 @@ int main( int argc, char** argv)
 	ApplicationInstaller::instance();
 
 	ApplicationProcessManager::instance();
+
+	ApplicationLaunchBooster::instance();
 
 	// Initialize the Event Reporter
 	EventReporter::init(host->mainLoop());

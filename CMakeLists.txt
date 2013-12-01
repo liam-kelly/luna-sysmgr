@@ -32,6 +32,24 @@ if(NOT Qt5Widgets_FOUND)
     message(FATAL_ERROR "Qt5Widgets module is required!")
 endif()
 
+# We need the Qml, Quick and WebKit packages in order to do some preloading for
+# launching application processes very fast
+
+find_package(Qt5Qml REQUIRED)
+if(NOT Qt5Qml_FOUND)
+    message(FATAL_ERROR "Qt5Qml module is required!")
+endif()
+
+find_package(Qt5Quick REQUIRED)
+if(NOT Qt5Quick_FOUND)
+    message(FATAL_ERROR "Qt5Quick module is required!")
+endif()
+
+find_package(Qt5WebKit REQUIRED)
+if(NOT Qt5WebKit_FOUND)
+    message(FATAL_ERROR "Qt5WebKit module is required!")
+endif()
+
 find_package(PkgConfig "0.22" REQUIRED)
 
 pkg_check_modules(GLIB2 glib-2.0 REQUIRED)
@@ -108,7 +126,8 @@ set(HEADERS
     Src/core/PtrArray.h
     Src/core/AnimationEquations.h
     Src/core/GraphicsDefs.h
-    Src/remote/ApplicationProcessManager.h)
+    Src/remote/ApplicationProcessManager.h
+    Src/remote/ApplicationLaunchBooster.h)
 
 set(SOURCES
     Src/base/Security.cpp
@@ -144,7 +163,11 @@ set(SOURCES
     Src/core/MallocHooks.cpp
     Src/core/KeywordMap.cpp
     Src/remote/ApplicationProcessManager.cpp
+    Src/remote/ApplicationLaunchBooster.cpp
     Src/Main.cpp)
+
+set(PRELOAD_FILES Src/remote/preload.qml)
+install(FILES ${PRELOAD_FILES} DESTINATION ${WEBOS_INSTALL_WEBOS_SYSMGRDIR})
 
 add_executable(LunaSysMgr ${SOURCES})
 target_link_libraries(LunaSysMgr
@@ -164,7 +187,7 @@ target_link_libraries(LunaSysMgr
     ${PMLOGLIB_LIBRARIES}
     ${ROLEGEN_LIBRARIES}
     pthread)
-qt5_use_modules(LunaSysMgr Core Gui Widgets)
+qt5_use_modules(LunaSysMgr Core Gui Widgets Quick WebKit)
 
 webos_build_daemon()
 webos_build_system_bus_files()
