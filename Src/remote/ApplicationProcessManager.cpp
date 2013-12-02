@@ -25,6 +25,7 @@
 
 #define WEBAPP_LAUNCHER_PATH    "/usr/sbin/webapp-launcher"
 #define QMLAPP_LAUNCHER_PATH    "/usr/bin/qt5/qmlscene"
+#define SYSTEMD_RUN_PATH        "/usr/bin/systemd-run"
 
 ApplicationProcess::ApplicationProcess(const QString& id, QObject *parent) :
     QProcess(parent),
@@ -128,7 +129,7 @@ std::string ApplicationProcessManager::launch(std::string appId, std::string par
     return processId.toStdString();
 }
 
-qint64 ApplicationProcessManager::launchProcess(const QString& id, const QString &path, const QStringList &parameters)
+qint64 ApplicationProcessManager::launchProcess(const QString& id, const QString &path, const QStringList &parameters, bool nativeApp)
 {
     qDebug() << "Starting process" << id << path << parameters;
 
@@ -144,9 +145,17 @@ qint64 ApplicationProcessManager::launchProcess(const QString& id, const QString
 
     connect(process, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(onProcessFinished(int,QProcess::ExitStatus)));
 
-    // NOTE: Currently we're just forking once so the new process will be a child of ours and
-    // will exit once we exit.
-    process->start(path, parameters);
+    // We're starting the new application as a systemd scope in order to put
+    // it into a slice afterwards to apply different resource control settings
+    QString sliceName = nativeApp ? "native-applications.slice" : "web-applications.slice";
+    QStringList finalParameters;
+    finalParameters << "--scope";
+    finalParameters << QString("--unit=%1").arg(id);
+    finalParameters << QString("--slice=%1").arg(sliceName);
+    finalParameters << path;
+    finalParameters << parameters;
+
+    process->start(SYSTEMD_RUN_PATH, finalParameters);
     process->waitForStarted();
 
     if (process->state() != QProcess::Running) {
@@ -203,7 +212,7 @@ qint64 ApplicationProcessManager::launchNativeApp(ApplicationDescription *desc, 
     QStringList parameters;
     parameters << QString::fromStdString(params);
 
-    return launchProcess(QString::fromStdString(desc->id()), QString::fromStdString(desc->entryPoint()), parameters);
+    return launchProcess(QString::fromStdString(desc->id()), QString::fromStdString(desc->entryPoint()), parameters, true);
 }
 
 qint64 ApplicationProcessManager::launchQMLApp(ApplicationDescription *desc, std::string &params, WindowType::Type winType)
