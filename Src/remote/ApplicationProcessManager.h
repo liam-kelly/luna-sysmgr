@@ -66,7 +66,7 @@ private:
     qint64 launchNativeApp(ApplicationDescription *desc, std::string& params, WindowType::Type winType);
     qint64 launchQMLApp(ApplicationDescription *desc, std::string& params, WindowType::Type winType);
 
-    qint64 launchProcess(const QString& id, const QString& path, const QStringList& parameters, bool nativeApp = false);
+    qint64 launchProcess(const QString& id, const QString& path, const QStringList& parameters);
 
     QList<ApplicationProcess*> m_applications;
 };
